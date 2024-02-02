@@ -4,6 +4,8 @@ const saltRounds = 12;
 const bcrypt = require("bcrypt");
 const MongoStore = require("connect-mongo");
 
+
+require("dotenv").config();
 require("./utils.js");
 const database = include('databaseConnection');
 const db_utils = include('database/db_utils');
@@ -16,7 +18,7 @@ const mongodb_session_secret = process.env.MONGODB_SESSION_SECRET;
 const node_session_secret = process.env.NODE_SESSION_SECRET;
 
 const app = express();
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 3090;
 
 const expire = 1 * 60 * 60 * 1000;
 
@@ -46,7 +48,7 @@ app.get('/', (req, res) => {
 
 app.get('/about', (req, res) => {
     res.render("about")
-})
+});
 
 app.get("/login", (req, res) => {
   res.render("login")
@@ -60,65 +62,6 @@ app.post("/submitUser", async (req, res) => {
   var name = req.body.name;
   var password = req.body.password;
   var email = req.body.email;
-
-  const schema = Joi.object({
-    name: Joi.string().alphanum().max(20).required(),
-    password: Joi.string().max(20).required(),
-    email: Joi.string().required(),
-  });
-
-  const validationResult = schema.validate({ name, password, email });
-
-  const existingUser = await userCollection
-    .find({ email: email })
-    .project({ email: email })
-    .toArray();
-
-  if (existingUser.length != 0) {
-    console.log("user already exists");
-    res.redirect("/signup?exists=1");
-    return;
-  }
-
-  if (name == "") {
-    if (email == "") {
-      if (password == "") {
-        res.redirect("/signup?missing=1");
-        return;
-      }
-      res.redirect("/signup?email=1&name=1");
-      return;
-    }
-    res.redirect("/signup?name=1");
-    return;
-  }
-  if (email == "") {
-    if (password == "") {
-        res.redirect("/signup?pass=1&email=1");
-        return;
-    }
-    res.redirect("/signup?email=1");
-    return;
-  }
-  if (password == "") {
-    if (name == "") {
-        res.redirect("/signup?pass=1&name=1");
-        return;
-    }
-    res.redirect("/signup?password=1");
-    return;
-  }
-
-  var hashedPassword = await bcrypt.hash(password, saltRounds);
-  await userCollection.insertOne({
-    name: name,
-    password: hashedPassword,
-    email: email,
-  });
-  console.log("signup successful");
-  req.session.authenticated = true;
-  req.session.name = name;
-  res.redirect("/");
 });
 
 app.post("/loggingin", async (req, res) => {
