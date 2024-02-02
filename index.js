@@ -1,14 +1,17 @@
-require("./utils.js");
 const session = require("express-session");
 const express = require("express");
 const saltRounds = 12;
 const bcrypt = require("bcrypt");
 const MongoStore = require("connect-mongo");
 
+require("./utils.js");
+const database = include('databaseConnection');
+const db_utils = include('database/db_utils');
+const db_users = include('database/users');
+
 const mongodb_host = process.env.MONGODB_HOST;
 const mongodb_user = process.env.MONGODB_USER;
 const mongodb_password = process.env.MONGODB_PASSWORD;
-const mongodb_database = process.env.MONGODB_DATABASE;
 const mongodb_session_secret = process.env.MONGODB_SESSION_SECRET;
 const node_session_secret = process.env.NODE_SESSION_SECRET;
 
@@ -18,10 +21,6 @@ const port = process.env.PORT || 8000;
 const expire = 1 * 60 * 60 * 1000;
 
 app.set('view engine', 'ejs');
-
-var { database } = include("databaseConnection");
-
-const userCollection = database.db(mongodb_database).collection("users");
 
 app.use(express.urlencoded({ extended: false }));
 
@@ -46,58 +45,15 @@ app.get('/', (req, res) => {
 });
 
 app.get('/about', (req, res) => {
-    
+    res.render("about")
 })
 
 app.get("/login", (req, res) => {
-  var error = req.query.error;
-  var html = `Log in
-<form action='/loggingin' method='post'>
-<input name='email' type='text' placeholder='Email'>
-<input name='password' type='password' placeholder='password'>
-<button>Submit</button>
-</form>`;
- if (error) {
-    html += `<br> Incorrect credential combination`
- }
-  res.send(html);
+  res.render("login")
 });
 
 app.get("/signup", (req, res) => {
-  var missing = req.query.missing;
-  var pass = req.query.pass;
-  var email = req.query.email;
-  var name = req.query.name;
-  var exists = req.query.exists;
-  var html = `Sign up
-<form action='/submitUser' method='post'>
-<input name='name' type='text' placeholder='Name'>
-<input name='email' type='email' placeholder='Email'>
-<input name='password' type='password' placeholder='Password'>
-<button>Submit</button>
-</form>`;
 
-  if (missing) {
-    html += "<br> Please fill in all fields!";
-  } else {
-    if (name || pass || email) {
-        html += "Please fill in following: ";
-        if (name) {
-            html += "Name ";
-        }
-        if (pass) {
-            html += "Password ";
-        }
-        if (email) {
-            html += "Email ";
-        }
-    } 
-}
-if (exists) {
-    html += "That email already exists!";
-  }
-
-res.send(html);
 });
 
 app.post("/submitUser", async (req, res) => {
