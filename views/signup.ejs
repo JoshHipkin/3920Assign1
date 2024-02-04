@@ -1,0 +1,24 @@
+<%- include("templates/header") %>
+<h1>Sign Up</h1>
+<form action="/signingup" method="post">
+    <% if (existingUser == 1) { %>
+        <p>Username already in use. Please try again!</p>
+    <% } if (missingUser==1 && missingPass==1) { %>
+        <p>Please enter both username and password.</p>
+      <% } if (missingPass==1) { %>
+        <p>Please enter a password.</p>
+      <% } if (missingUser==1) { %>
+        <p>Please enter a username.</p>
+      <% } %>
+    <div>
+        <input type="text" name="username" placeholder="Username">
+    </div>
+    <div>
+        <input type="password" name="password", placeholder="Password">
+    </div>
+      <div>
+        <button>Submit</button>
+      </div>
+    
+</form>
+<%- include("templates/footer") %>

@@ -35,8 +35,6 @@ async function getUsers(postData) {
 	
 	try {
 		const results = await database.query(getUsersSQL);
-
-        console.log("Successfully retrieved users");
 		console.log(results[0]);
 		return results[0];
 	}
@@ -49,28 +47,17 @@ async function getUsers(postData) {
 
 async function getUser(postData) {
 	let getUserSQL = `
-		SELECT user_id, username, password, type
+		SELECT user_id, username, password
 		FROM user
-		JOIN user_type USING (user_type_id)
-		WHERE username = :user;
+		WHERE username = '${postData.user}';
 	`;
 
-	let params = {
-		user: postData.user
-	}
-	
-	try {
-		const results = await database.query(getUserSQL, params);
+	console.log(getUserSQL);
 
-        console.log("Successfully found user");
-		console.log(results[0]);
-		return results[0];
-	}
-	catch(err) {
-		console.log("Error trying to find user");
-        console.log(err);
-		return false;
-	}
+		const results = await database.query(getUserSQL);
+	
+			console.log(results[0]);
+			return results[0];
 }
 
 module.exports = {createUser, getUsers, getUser};

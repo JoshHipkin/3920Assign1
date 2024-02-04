@@ -1,0 +1,19 @@
+<%- include("templates/header") %>
+<h1>Users:</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Hashed Password</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% for(let i = 0; i < users.length; i++) { %>
+      <tr>
+        <td><%= users[i].username %></td>
+        <td><%= users[i].password %></td>
+      </tr>
+    <% } %>
+  </tbody>
+</table>
+<%- include("templates/footer") %>

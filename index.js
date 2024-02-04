@@ -1,5 +1,6 @@
 const session = require("express-session");
 const express = require("express");
+const bodyParser = require('body-parser');
 const saltRounds = 12;
 const bcrypt = require("bcrypt");
 const MongoStore = require("connect-mongo");
@@ -7,8 +8,7 @@ const MongoStore = require("connect-mongo");
 
 require("dotenv").config();
 require("./utils.js");
-const database = include('databaseConnection');
-const db_utils = include('database/db_utils');
+
 const db_users = include('database/users');
 
 const mongodb_host = process.env.MONGODB_HOST;
@@ -20,11 +20,12 @@ const node_session_secret = process.env.NODE_SESSION_SECRET;
 const app = express();
 const port = process.env.PORT || 3090;
 
-const expire = 1 * 60 * 60 * 1000;
+const expireTime = 1 * 60 * 60 * 1000;
 
 app.set('view engine', 'ejs');
 
 app.use(express.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true}));
 
 var mongoStore = MongoStore.create({
   mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@${mongodb_host}/sessions`,
@@ -42,69 +43,125 @@ app.use(
   })
 );
 
+//middleware
+function isValidSession(req) {
+  if (req.session.authenticated) {
+    return true;
+  }
+  return false;
+}
+
+function sessionValidation(req, res, next) {
+  if(!isValidSession(req)) {
+    req.session.destroy();
+    res.redirect('/');
+    return
+  } else {
+    next();
+  }
+}
+
+
 app.get('/', (req, res) => {
     res.render("index");
 });
 
-app.get('/about', (req, res) => {
-    res.render("about")
+app.get('/createTables', (req, res) => {
+  const create_tables = include('database/create_tables');
+  var success = create_tables.createTables();
+  if (success) {
+    res.send("Success creating tables.");
+  } else {
+    res.send("error creating tables.");
+  }
 });
 
 app.get("/login", (req, res) => {
-  res.render("login")
+  res.render("login");
 });
 
 app.get("/signup", (req, res) => {
-
+  const existingUser = req.query.existingUser;
+  const missingUser = req.query.missingUser;
+  const missingPass = req.query.missingPass;
+  res.render("signup", { existingUser : existingUser, missingUser : missingUser, missingPass : missingPass});
 });
 
-app.post("/submitUser", async (req, res) => {
-  var name = req.body.name;
+app.post("/signingup", async (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+
+  if (!username && !password) {
+    res.redirect("/signup?missingUser=1&missingPass=1");
+    return;
+  } else if (!password) {
+    res.redirect("/signup?missingPass=1");
+    return;
+  } else if (!username) {
+    res.redirect("/signup?missingUser=1");
+    return
+  }
+
+  const hashedPassword = bcrypt.hashSync(password, saltRounds);
+
+    try {
+      const success = await db_users.createUser({user : username, hashedPassword : hashedPassword});
+      
+      if (success) {
+        res.status(200);
+        res.redirect("/loggedin");
+      } else {
+        res.status(500).send("Error creating user");
+      }
+    } catch (error) {
+      console.error("Error creating user ", error);
+      res.status(500).send("Error creating user");
+    }
+});
+
+app.post('/loggingin', async (req,res) => {
+  var username = req.body.username;
   var password = req.body.password;
-  var email = req.body.email;
+
+
+  var results = await db_users.getUser({ user: username});
+
+  if (results) {
+      if (results.length == 1) {
+          if (bcrypt.compareSync(password, results[0].password)) {
+              req.session.authenticated = true;
+              req.session.user_type = results[0].type; 
+              req.session.username = username;
+              req.session.cookie.maxAge = expireTime;
+      
+              res.redirect('/loggedIn');
+              return;
+          }
+          else {
+              console.log("invalid password");
+          }
+      }
+      else {
+          console.log('invalid number of users matched: '+results.length+" (expected 1).");
+          res.redirect('/login');
+          return;            
+      }
+  }
+
+  console.log('user not found');
+  res.redirect("/login");
 });
 
-app.post("/loggingin", async (req, res) => {
-  var email = req.body.email;
-  var password = req.body.password;
 
-  const schema = Joi.string().max(20).required();
-  const validationResult = schema.validate(email);
-  if (validationResult.error != null) {
-    console.log(validationResult.error);
-    res.redirect("/login");
-    return;
-  }
-  const result = await userCollection
-    .find({ email: email })
-    .project({ name: 1, email: 1, password: 1, _id: 1 })
-    .toArray();
-
-  if (result.length != 1) {
-    res.redirect("/login?error=1");
-    return;
-  }
-  if (await bcrypt.compare(password, result[0].password)) {
-    console.log("Great success!");
-    req.session.authenticated = true;
-    req.session.email = email;
-    req.session.name = result[0].name;
-    req.session.cookie.maxAge = expire;
-
-    res.redirect("/loggedin");
-    return;
-  } else {
-    res.redirect("/login?error=1");
-    return;
-  }
+app.get("/loggedin", sessionValidation, async (req, res) => {
+  res.render("loggedin", {name: req.session.username});
 });
 
-app.get("/loggedin", (req, res) => {
-  if (!req.session.authenticated) {
-    res.redirect("/login");
-  } else {
-    res.redirect("/members");
-  }
+const imageUrl = ["mindy-kaling-website.gif", "rock.jpg", "web-webdevelopper.gif"];
+
+app.get("/members", sessionValidation, async (req, res) => {
+  const imgNum = Math.floor(Math.random() * imageUrl.length);
+  res.render("members", {name: req.session.username, imgUrl : imageUrl[imgNum] });
 });
 
 app.get("/logout", (req, res) => {
@@ -117,40 +174,25 @@ app.get("/logout", (req, res) => {
   });
 });
 
-const imageUrl = ["miketyson.gif", "michaelscott.jpg", "hellothere.gif"];
-
-app.get("/image/:id", (req, res) => {
-  var pic = req.params.id;
-  if (pic == 1) {
-    res.send(`<img src= '/${imageUrl[0]}'>`);
-  } else if (pic == 2) {
-    res.send(`<img src= '/${imageUrl[1]}'>`);
-  } else if (pic == 3) {
-    res.send(`<img src= '/${imageUrl[2]}'>`);
+app.get("/users", async (req, res) => {
+  try {
+    const users = await db_users.getUsers();
+    if (users) {
+      res.render("users", {users : users});
+    }
+  } catch (error) {
+    console.log("Error finding users");
+    console.log(error);
   }
 });
 
-app.get("/members", (req, res) => {
-  if (!req.session.name) {
-    res.redirect("/");
-    return;
-  }
 
-  const name = req.session.name;
-  const pic = imageUrl[Math.floor(Math.random() * imageUrl.length)];
-
-  const html = `<h1>Welcome to the elite members club, ${name}</h1>
-        <img src= "/${pic}" alt= "oops, there's supposed to be an image here"
-        <br>
-        <a href = "/logout"><button>Log out</button></a>`;
-  res.send(html);
-});
 
 app.use(express.static(__dirname + "/public"));
 
 app.get("*", (req, res) => {
   res.status(404);
-  res.send("404 - Page not found");
+  res.render("404");
 });
 
 app.listen(port, function () {
