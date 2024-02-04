@@ -108,6 +108,9 @@ app.post("/signingup", async (req, res) => {
       const success = await db_users.createUser({user : username, hashedPassword : hashedPassword});
       
       if (success) {
+        req.session.authenticated = true;
+        req.session.username = username;
+        req.session.cookie.maxAge = expireTime;
         res.status(200);
         res.redirect("/loggedin");
       } else {
@@ -129,13 +132,11 @@ app.post('/loggingin', async (req,res) => {
   if (results) {
       if (results.length == 1) {
           if (bcrypt.compareSync(password, results[0].password)) {
-              req.session.authenticated = true;
-              req.session.user_type = results[0].type; 
+              req.session.authenticated = true; 
               req.session.username = username;
               req.session.cookie.maxAge = expireTime;
       
               res.redirect('/loggedIn');
-              return;
           }
           else {
               console.log("invalid password");
@@ -185,6 +186,15 @@ app.get("/users", async (req, res) => {
     console.log(error);
   }
 });
+
+app.get("/deleteusers", async (req, res) => {
+  const deleteUsers = include('database/delete_users');
+  try {
+    deleteUsers.deleteUsers();
+  } catch (error) {
+    console.log(error);
+  }
+})
 
 
 
