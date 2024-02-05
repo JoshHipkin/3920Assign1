@@ -54,10 +54,16 @@ async function getUser(postData) {
 
 	console.log(getUserSQL);
 
+	try {
 		const results = await database.query(getUserSQL);
+		console.log(results[0]);
+		return results[0];
+	} catch (error) {
+		console.log(error);
+		return false;
+	}
 	
-			console.log(results[0]);
-			return results[0];
+		
 }
 
 module.exports = {createUser, getUsers, getUser};

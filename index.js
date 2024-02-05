@@ -161,9 +161,6 @@ app.post('/loggingin', async (req,res) => {
           return;            
       }
   }
-
-  console.log('user not found');
-  res.redirect("/login");
 });
 
 
