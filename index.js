@@ -1,3 +1,4 @@
+require("./utils.js");
 const session = require("express-session");
 const express = require("express");
 const bodyParser = require('body-parser');
@@ -7,13 +8,14 @@ const MongoStore = require("connect-mongo");
 
 
 require("dotenv").config();
-require("./utils.js");
+
 
 const db_users = include('database/users');
 
 const mongodb_host = process.env.MONGODB_HOST;
 const mongodb_user = process.env.MONGODB_USER;
 const mongodb_password = process.env.MONGODB_PASSWORD;
+const mongodb_database = process.env.MONGODB_DATABASE
 const mongodb_session_secret = process.env.MONGODB_SESSION_SECRET;
 const node_session_secret = process.env.NODE_SESSION_SECRET;
 
@@ -28,7 +30,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.urlencoded({ extended: true}));
 
 var mongoStore = MongoStore.create({
-  mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@${mongodb_host}/sessions`,
+  mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@${mongodb_host}/${mongodb_database}`,
   crypto: {
     secret: mongodb_session_secret,
   },
