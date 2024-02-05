@@ -5,7 +5,7 @@ async function deleteUsers() {
     DELETE FROM user
     `
     try {
-        const results = await database.query(deleteUserSQL);
+        await database.query(deleteUserSQL);
         console.log("successfully deleted users");
         return true;
     } catch (error) {

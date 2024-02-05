@@ -29,21 +29,32 @@ app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: false }));
 app.use(bodyParser.urlencoded({ extended: true}));
 
-var mongoStore = MongoStore.create({
-  mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@${mongodb_host}/${mongodb_database}`,
-  crypto: {
-    secret: mongodb_session_secret,
-  },
-});
+var mongoStore;
+try {
+    mongoStore = MongoStore.create({
+    mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@${mongodb_host}/${mongodb_database}`,
+    crypto: {
+      secret: mongodb_session_secret,
+    },
+  });
+  console.log("mongoStore created successfully");
+} catch (error) {
+  console.error('Error creating MongoStore:', error);
+}
 
-app.use(
-  session({
-    secret: node_session_secret,
-    store: mongoStore,
-    saveUninitialized: false,
-    resave: true,
-  })
-);
+if (mongoStore) {
+  app.use(
+    session({
+      secret: node_session_secret,
+      store: mongoStore,
+      saveUninitialized: false,
+      resave: true,
+    })
+  );
+} else {
+  console.error('MongoStore not created. Session storage will not work properly.');
+}
+
 
 //middleware
 function isValidSession(req) {
