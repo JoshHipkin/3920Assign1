@@ -93,7 +93,7 @@ app.get("/login", (req, res) => {
   const notFound = req.query.notFound;
   const missingUser = req.query.missingUser;
   const missingPass = req.query.missingPass;
-  res.render("login");
+  res.render("login", {notFound : notFound, missingPass : missingPass, missingUser : missingUser});
 });
 
 app.get("/signup", (req, res) => {
