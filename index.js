@@ -201,6 +201,7 @@ app.get("/deleteusers", async (req, res) => {
   const deleteUsers = include('database/delete_users');
   try {
     deleteUsers.deleteUsers();
+    res.redirect("/");
   } catch (error) {
     console.log(error);
   }
