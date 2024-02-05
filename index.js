@@ -90,6 +90,9 @@ app.get('/createTables', (req, res) => {
 });
 
 app.get("/login", (req, res) => {
+  const notFound = req.query.notFound;
+  const missingUser = req.query.missingUser;
+  const missingPass = req.query.missingPass;
   res.render("login");
 });
 
@@ -138,6 +141,14 @@ app.post("/signingup", async (req, res) => {
 app.post('/loggingin', async (req,res) => {
   var username = req.body.username;
   var password = req.body.password;
+
+  if (!username) {
+    res.redirect("/login?missingUser=1");
+    return;
+  } else if (!password) {
+    res.redirect("/login?missingPass=1");
+    return;
+  } 
 
 
   var results = await db_users.getUser({ user: username});

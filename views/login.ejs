@@ -1,5 +1,12 @@
 <%- include("templates/header") %>
 <h1>Log in</h1>
+<%  if (missingPass==1) { %>
+    <p>Please enter a password.</p>
+  <% } if (missingUser==1) { %>
+    <p>Please enter a username.</p>
+  <% }  if (notFound==1) { %>
+    <p>User not found.</p>
+    <% } %>
 <form action="/loggingin" method="post">
     <input type="text" name="username" placeholder="Username"  required>
     <input type="text" name="password" placeholder="Password" required>
