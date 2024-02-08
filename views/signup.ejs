@@ -5,9 +5,9 @@
         <p>Username already in use. Please try again!</p>
     <% } if (missingUser==1 && missingPass==1) { %>
         <p>Please enter both username and password.</p>
-      <% } if (missingPass==1) { %>
+      <% } else if (missingPass==1) { %>
         <p>Please enter a password.</p>
-      <% } if (missingUser==1) { %>
+      <% } else if (missingUser==1) { %>
         <p>Please enter a username.</p>
       <% } %>
     <div>
